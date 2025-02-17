@@ -1,51 +1,99 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { WaveformDisplay } from '@/components/WaveformDisplay';
 import { SampleList } from '@/components/SampleList';
 import { Controls } from '@/components/Controls';
 import { Sample } from '@/types/audio';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
+import { detectTransients, analyzeSpectrum, detectEnvelope } from '@/utils/audioAnalysis';
+import { toast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const [audioData, setAudioData] = useState<Float32Array | undefined>();
   const [samples, setSamples] = useState<Sample[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sensitivity, setSensitivity] = useState(50);
+  const audioContextRef = useRef<AudioContext>();
+
+  const analyzeAudio = async (audioBuffer: AudioBuffer) => {
+    try {
+      // Detect transients
+      const transients = detectTransients(audioBuffer, sensitivity);
+      
+      // Analyze spectrum
+      const spectrum = await analyzeSpectrum(audioBuffer);
+      
+      // Detect envelope
+      const envelope = detectEnvelope(audioBuffer);
+      
+      // Create samples based on analysis
+      const newSamples: Sample[] = transients.map((startTime, index) => {
+        const duration = index < transients.length - 1 
+          ? transients[index + 1] - startTime 
+          : 0.5;
+        
+        // Determine sample type based on spectral content
+        let type: Sample['type'] = 'other';
+        if (spectrum.lowFreq > spectrum.midFreq && spectrum.lowFreq > spectrum.highFreq) {
+          type = 'kick';
+        } else if (spectrum.highFreq > spectrum.midFreq && spectrum.highFreq > spectrum.lowFreq) {
+          type = 'hihat';
+        } else if (spectrum.midFreq > spectrum.lowFreq && spectrum.midFreq > spectrum.highFreq) {
+          type = 'snare';
+        }
+        
+        return {
+          id: `${index + 1}`,
+          name: `${type.charAt(0).toUpperCase() + type.slice(1)} Sample ${index + 1}`,
+          type,
+          start: startTime,
+          duration,
+          buffer: audioBuffer
+        };
+      });
+      
+      setSamples(newSamples);
+      toast({
+        title: "Analysis Complete",
+        description: `Found ${newSamples.length} samples in the audio file.`
+      });
+    } catch (error) {
+      console.error('Error analyzing audio:', error);
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: "There was an error analyzing the audio file."
+      });
+    }
+  };
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const arrayBuffer = await file.arrayBuffer();
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    
-    // Get audio data for visualization
-    const channelData = audioBuffer.getChannelData(0);
-    setAudioData(channelData);
-
-    // Example detection (simplified)
-    const sampleData: Sample[] = [
-      {
-        id: '1',
-        name: 'Kick Sample 1',
-        type: 'kick',
-        start: 0,
-        duration: 0.5,
-        buffer: audioBuffer
-      },
-      {
-        id: '2',
-        name: 'Snare Sample 1',
-        type: 'snare',
-        start: 0.5,
-        duration: 0.3,
-        buffer: audioBuffer
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
-    ];
-    setSamples(sampleData);
-  }, []);
+      const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+      
+      // Get audio data for visualization
+      const channelData = audioBuffer.getChannelData(0);
+      setAudioData(channelData);
+
+      // Analyze the audio
+      await analyzeAudio(audioBuffer);
+    } catch (error) {
+      console.error('Error loading audio:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load the audio file."
+      });
+    }
+  }, [sensitivity]);
 
   const handlePlayPause = useCallback(() => {
     setIsPlaying(!isPlaying);
@@ -59,9 +107,29 @@ const Index = () => {
     // Implementation for skip forward
   }, []);
 
-  const handleSampleClick = useCallback((sample: Sample) => {
-    // Implementation for sample playback
-    console.log('Playing sample:', sample.name);
+  const handleSampleClick = useCallback(async (sample: Sample) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    try {
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = sample.buffer;
+      source.connect(audioContextRef.current.destination);
+      source.start(0, sample.start, sample.duration);
+      
+      toast({
+        title: "Playing Sample",
+        description: sample.name
+      });
+    } catch (error) {
+      console.error('Error playing sample:', error);
+      toast({
+        variant: "destructive",
+        title: "Playback Failed",
+        description: "Failed to play the sample."
+      });
+    }
   }, []);
 
   return (
