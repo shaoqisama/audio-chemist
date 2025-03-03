@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Check, Scissors, Merge, Play, Flag, Pencil, Tag, Download } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { toast } from './ui/use-toast';
+import { ExportDialog } from './ExportDialog';
 
 interface SampleListProps {
   samples: Sample[];
@@ -24,6 +25,7 @@ export const SampleList = ({
   const [selectedSamples, setSelectedSamples] = useState<string[]>([]);
   const [isRenaming, setIsRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const handleSelectSample = (id: string) => {
     setSelectedSamples(prev => {
@@ -67,6 +69,21 @@ export const SampleList = ({
     setIsRenaming(null);
   };
 
+  const handleExportClick = () => {
+    if (selectedSamples.length === 0) {
+      toast({
+        title: "Selection Required",
+        description: "Select at least one sample to export",
+      });
+      return;
+    }
+    setShowExportDialog(true);
+  };
+
+  const getSelectedSamples = () => {
+    return samples.filter(sample => selectedSamples.includes(sample.id));
+  };
+
   const getTypeColor = (type: Sample['type']) => {
     switch (type) {
       case 'kick': return 'bg-red-500/20 text-red-500 border-red-500/30';
@@ -102,6 +119,15 @@ export const SampleList = ({
                 <span>Merge</span>
               </Button>
             )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleExportClick}
+              className="flex items-center gap-1"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </Button>
           </div>
         </div>
       )}
@@ -191,10 +217,8 @@ export const SampleList = ({
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => {
-                    toast({
-                      title: "Download Sample",
-                      description: `Feature coming soon: ${sample.name}`
-                    });
+                    setSelectedSamples([sample.id]);
+                    setShowExportDialog(true);
                   }}
                 >
                   <Download className="h-4 w-4" />
@@ -203,6 +227,13 @@ export const SampleList = ({
             </div>
           </div>
         ))
+      )}
+
+      {showExportDialog && (
+        <ExportDialog
+          samples={getSelectedSamples()}
+          onClose={() => setShowExportDialog(false)}
+        />
       )}
     </div>
   );
