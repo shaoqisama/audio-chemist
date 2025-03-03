@@ -23,50 +23,34 @@ export const Controls = ({
   return (
     <div className="flex flex-col space-y-4 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Detection Sensitivity</span>
-        <span className="text-sm text-muted-foreground">{sensitivity}%</span>
+        <span className="text-sm font-medium">Playback Controls</span>
       </div>
-      <Slider.Root
-        className="relative flex items-center select-none touch-none w-full h-5"
-        value={[sensitivity]}
-        onValueChange={(values) => onSensitivityChange(values[0])}
-        max={100}
-        step={1}
-      >
-        <Slider.Track className="bg-secondary relative grow rounded-full h-[3px]">
-          <Slider.Range className="absolute bg-primary rounded-full h-full" />
-        </Slider.Track>
-        <Slider.Thumb
-          className="block w-5 h-5 bg-primary shadow-lg rounded-full hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
-          aria-label="Sensitivity"
-        />
-      </Slider.Root>
       
-      <div className="playback-controls">
+      <div className="flex items-center justify-center space-x-4">
         <Button
           variant="ghost"
           size="icon"
-          className="playback-button"
+          className="h-10 w-10"
           onClick={onSkipBack}
         >
           <SkipBack className="h-6 w-6" />
         </Button>
         <Button
-          variant="ghost"
+          variant="default"
           size="icon"
-          className="playback-button"
+          className="h-12 w-12 rounded-full"
           onClick={onPlayPause}
         >
           {isPlaying ? (
             <Pause className="h-6 w-6" />
           ) : (
-            <Play className="h-6 w-6" />
+            <Play className="h-6 w-6 ml-1" />
           )}
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="playback-button"
+          className="h-10 w-10"
           onClick={onSkipForward}
         >
           <SkipForward className="h-6 w-6" />

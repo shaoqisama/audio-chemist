@@ -80,6 +80,7 @@ export function ParameterControls({
                 max={100}
                 step={1}
               />
+              <p className="text-xs text-muted-foreground">Controls the sensitivity of sample detection algorithm. Higher values detect more samples.</p>
             </div>
           </TabsContent>
           <TabsContent value="advanced" className="space-y-4">

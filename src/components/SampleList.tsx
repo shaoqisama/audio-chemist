@@ -96,7 +96,7 @@ export const SampleList = ({
   };
 
   return (
-    <div className="flex flex-col space-y-2 h-full overflow-y-auto p-4">
+    <div className="flex flex-col space-y-2 max-h-[calc(100vh-220px)] overflow-y-auto p-4">
       {selectedSamples.length > 0 && (
         <div className="flex items-center justify-between bg-secondary/80 p-2 rounded-md mb-2">
           <span className="text-sm">{selectedSamples.length} selected</span>
