@@ -6,7 +6,13 @@ import { Controls } from '@/components/Controls';
 import { Sample } from '@/types/audio';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
-import { detectTransients, analyzeSpectrum, detectEnvelope } from '@/utils/audioAnalysis';
+import { 
+  detectTransients, 
+  analyzeSpectrum, 
+  detectEnvelope,
+  identifyInstrument, 
+  detectOnsets 
+} from '@/utils/audioAnalysis';
 import { toast } from '@/components/ui/use-toast';
 
 const Index = () => {
@@ -18,40 +24,70 @@ const Index = () => {
 
   const analyzeAudio = async (audioBuffer: AudioBuffer) => {
     try {
-      // Detect transients
+      // Detect transients and onsets
       const transients = detectTransients(audioBuffer, sensitivity);
+      const onsets = detectOnsets(audioBuffer, sensitivity);
       
-      // Analyze spectrum
+      // Combine both detection methods and sort chronologically
+      const allEvents = [...transients, ...onsets].sort((a, b) => a - b);
+      
+      // Remove duplicates (events that are very close to each other)
+      const uniqueEvents: number[] = [];
+      let lastEvent = -1;
+      const minTimeBetweenEvents = 0.1; // 100ms minimum between events
+      
+      allEvents.forEach(event => {
+        if (lastEvent === -1 || event - lastEvent >= minTimeBetweenEvents) {
+          uniqueEvents.push(event);
+          lastEvent = event;
+        }
+      });
+      
+      // Analyze spectrum for overall characteristics
       const spectrum = await analyzeSpectrum(audioBuffer);
       
-      // Detect envelope
-      const envelope = detectEnvelope(audioBuffer);
-      
       // Create samples based on analysis
-      const newSamples: Sample[] = transients.map((startTime, index) => {
-        const duration = index < transients.length - 1 
-          ? transients[index + 1] - startTime 
+      const newSamples: Sample[] = [];
+      
+      // Process each detected event
+      for (let i = 0; i < uniqueEvents.length; i++) {
+        const startTime = uniqueEvents[i];
+        const duration = i < uniqueEvents.length - 1 
+          ? uniqueEvents[i + 1] - startTime 
           : 0.5;
         
-        // Determine sample type based on spectral content
-        let type: Sample['type'] = 'other';
-        if (spectrum.lowFreq > spectrum.midFreq && spectrum.lowFreq > spectrum.highFreq) {
-          type = 'kick';
-        } else if (spectrum.highFreq > spectrum.midFreq && spectrum.highFreq > spectrum.lowFreq) {
-          type = 'hihat';
-        } else if (spectrum.midFreq > spectrum.lowFreq && spectrum.midFreq > spectrum.highFreq) {
-          type = 'snare';
+        // Use the new instrument identification function
+        const instrumentType = await identifyInstrument(audioBuffer, startTime, duration);
+        
+        // Map instrument type to sample type
+        let sampleType: Sample['type'] = 'other';
+        switch (instrumentType) {
+          case 'kick':
+          case 'snare':
+          case 'hihat':
+            sampleType = instrumentType as Sample['type'];
+            break;
+          case 'bass':
+            sampleType = 'bass';
+            break;
+          case 'piano':
+          case 'guitar':
+          case 'synth':
+            sampleType = 'melody';
+            break;
+          default:
+            sampleType = 'other';
         }
         
-        return {
-          id: `${index + 1}`,
-          name: `${type.charAt(0).toUpperCase() + type.slice(1)} Sample ${index + 1}`,
-          type,
+        newSamples.push({
+          id: `${i + 1}`,
+          name: `${instrumentType.charAt(0).toUpperCase() + instrumentType.slice(1)} Sample ${i + 1}`,
+          type: sampleType,
           start: startTime,
           duration,
           buffer: audioBuffer
-        };
-      });
+        });
+      }
       
       setSamples(newSamples);
       toast({
