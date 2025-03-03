@@ -6,6 +6,8 @@ export interface Sample {
   start: number;
   duration: number;
   buffer: AudioBuffer;
+  tags: string[];
+  favorite?: boolean;
 }
 
 export interface AudioState {

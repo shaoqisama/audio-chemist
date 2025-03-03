@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { WaveformDisplay } from '@/components/WaveformDisplay';
 import { SampleList } from '@/components/SampleList';
@@ -6,7 +5,7 @@ import { Controls } from '@/components/Controls';
 import { ParameterControls } from '@/components/ParameterControls';
 import { Sample } from '@/types/audio';
 import { Button } from '@/components/ui/button';
-import { Upload, PanelRight, PanelLeft } from 'lucide-react';
+import { Upload, PanelRight, PanelLeft, Library } from 'lucide-react';
 import { 
   detectTransients, 
   analyzeSpectrum, 
@@ -35,11 +34,46 @@ const Index = () => {
   // Audio markers
   const [markers, setMarkers] = useState<{id: string; position: number; color: string; label?: string}[]>([]);
   
+  // Sample management state
+  const [sampleLibrary, setSampleLibrary] = useState<Sample[]>([]);
+  const [activeLibrary, setActiveLibrary] = useState<'current' | 'saved'>('current');
+  
   const audioContextRef = useRef<AudioContext>();
   const audioBufferRef = useRef<AudioBuffer | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const startTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
+
+  // Load sample library from localStorage on component mount
+  useEffect(() => {
+    const savedSamplesJson = localStorage.getItem('sampleLibrary');
+    if (savedSamplesJson) {
+      try {
+        // We can't fully serialize AudioBuffer, so we'll need to handle this specially
+        const savedSamples = JSON.parse(savedSamplesJson);
+        setSampleLibrary(savedSamples);
+      } catch (error) {
+        console.error('Error loading saved samples:', error);
+      }
+    }
+  }, []);
+  
+  // Save sample library to localStorage when it changes
+  useEffect(() => {
+    if (sampleLibrary.length > 0) {
+      try {
+        // We can't fully serialize AudioBuffer, so we'll need to save what we can
+        const serializableSamples = sampleLibrary.map(({ buffer, ...rest }) => ({
+          ...rest,
+          // Mark samples that don't have buffer anymore
+          hasBuffer: false
+        }));
+        localStorage.setItem('sampleLibrary', JSON.stringify(serializableSamples));
+      } catch (error) {
+        console.error('Error saving samples:', error);
+      }
+    }
+  }, [sampleLibrary]);
 
   const analyzeAudio = async (audioBuffer: AudioBuffer) => {
     try {
@@ -122,7 +156,8 @@ const Index = () => {
           type: sampleType,
           start: startTime,
           duration,
-          buffer: audioBuffer
+          buffer: audioBuffer,
+          tags: []
         });
       }
       
@@ -279,7 +314,8 @@ const Index = () => {
       type: 'other', // Can be refined based on content analysis
       start: firstSample.start,
       duration: (lastSample.start + lastSample.duration) - firstSample.start,
-      buffer: firstSample.buffer
+      buffer: firstSample.buffer,
+      tags: []
     };
     
     // Remove merged samples and add the new one
@@ -303,6 +339,63 @@ const Index = () => {
       )
     );
   }, []);
+
+  // Handle adding samples to library
+  const handleAddToLibrary = useCallback((samplesToAdd: Sample[]) => {
+    setSampleLibrary(prev => {
+      // Add only samples that don't already exist in the library (by ID)
+      const newSamples = samplesToAdd.filter(
+        sample => !prev.some(existing => existing.id === sample.id)
+      );
+      
+      if (newSamples.length === 0) {
+        toast({
+          title: "Already Saved",
+          description: "These samples are already in your library"
+        });
+        return prev;
+      }
+      
+      toast({
+        title: "Added to Library",
+        description: `Added ${newSamples.length} sample${newSamples.length === 1 ? '' : 's'} to your library`
+      });
+      
+      return [...prev, ...newSamples];
+    });
+  }, []);
+
+  // Handle updating sample data (tags, favorites, etc.)
+  const handleSampleUpdate = useCallback((updatedSample: Sample) => {
+    if (activeLibrary === 'current') {
+      setSamples(prev => 
+        prev.map(sample => 
+          sample.id === updatedSample.id ? updatedSample : sample
+        )
+      );
+    } else {
+      setSampleLibrary(prev => 
+        prev.map(sample => 
+          sample.id === updatedSample.id ? updatedSample : sample
+        )
+      );
+    }
+  }, [activeLibrary]);
+
+  // Handle removing from library
+  const handleRemoveFromLibrary = useCallback((sampleIds: string[]) => {
+    setSampleLibrary(prev => prev.filter(sample => !sampleIds.includes(sample.id)));
+    
+    toast({
+      title: "Removed from Library",
+      description: `Removed ${sampleIds.length} sample${sampleIds.length === 1 ? '' : 's'} from your library`
+    });
+  }, []);
+
+  // Get the current samples to display based on active library
+  const getDisplayedSamples = () => {
+    return activeLibrary === 'current' ? samples : sampleLibrary;
+  };
 
   const handleAddMarker = useCallback((position: number) => {
     const newMarker = {
@@ -344,7 +437,8 @@ const Index = () => {
       type: sampleToSplit.type,
       start: sampleToSplit.start,
       duration: splitPoint - sampleToSplit.start,
-      buffer: audioBufferRef.current
+      buffer: audioBufferRef.current,
+      tags: [...(sampleToSplit.tags || [])]
     };
     
     const secondHalf: Sample = {
@@ -353,7 +447,8 @@ const Index = () => {
       type: sampleToSplit.type,
       start: splitPoint,
       duration: (sampleToSplit.start + sampleToSplit.duration) - splitPoint,
-      buffer: audioBufferRef.current
+      buffer: audioBufferRef.current,
+      tags: [...(sampleToSplit.tags || [])]
     };
     
     // Replace the split sample with two new samples
@@ -407,8 +502,9 @@ const Index = () => {
     return sum / (channelData.length / 1000);
   };
 
-  // Clean up on unmount
+  // Update the useEffect to handle audio buffer removal
   useEffect(() => {
+    // Clean up on unmount
     return () => {
       if (sourceNodeRef.current) {
         sourceNodeRef.current.stop();
@@ -416,12 +512,35 @@ const Index = () => {
       cancelAnimationFrame(animationFrameRef.current || 0);
     };
   }, []);
+  
+  // Special handling for sample library without buffers
+  useEffect(() => {
+    if (activeLibrary === 'saved' && audioBufferRef.current) {
+      // If we have a current audio buffer, try to re-associate it with library samples
+      setSampleLibrary(prev => 
+        prev.map(sample => {
+          // If sample doesn't have buffer and types match, assign the current buffer
+          if (!sample.buffer && audioBufferRef.current) {
+            return { ...sample, buffer: audioBufferRef.current };
+          }
+          return sample;
+        })
+      );
+    }
+  }, [activeLibrary, audioBufferRef.current]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background p-6 animate-fade-in">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Audio Alchemist</h1>
         <div className="flex items-center space-x-3">
+          <Button 
+            variant={activeLibrary === 'saved' ? 'default' : 'outline'} 
+            onClick={() => setActiveLibrary(activeLibrary === 'current' ? 'saved' : 'current')}
+          >
+            <Library className="w-4 h-4 mr-2" />
+            {activeLibrary === 'current' ? 'View Library' : 'Current Session'}
+          </Button>
           <Button variant="outline" onClick={() => setShowRightPanel(!showRightPanel)}>
             {showRightPanel ? <PanelRight className="w-4 h-4 mr-2" /> : <PanelLeft className="w-4 h-4 mr-2" />}
             {showRightPanel ? "Hide" : "Show"} Panel
@@ -477,14 +596,28 @@ const Index = () => {
         
         {showRightPanel && (
           <div className="bg-card rounded-lg border">
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-medium">Detected Samples</h2>
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="text-lg font-medium">
+                {activeLibrary === 'current' ? 'Detected Samples' : 'Sample Library'}
+              </h2>
+              {activeLibrary === 'current' && samples.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleAddToLibrary(samples)}
+                  className="flex items-center gap-1"
+                >
+                  <Library className="h-3.5 w-3.5" />
+                  <span>Save All</span>
+                </Button>
+              )}
             </div>
             <SampleList
-              samples={samples}
+              samples={getDisplayedSamples()}
               onSampleClick={handleSampleClick}
-              onSampleMerge={handleSampleMerge}
+              onSampleMerge={activeLibrary === 'current' ? handleSampleMerge : undefined}
               onSampleRename={handleSampleRename}
+              onSampleUpdate={handleSampleUpdate}
             />
           </div>
         )}
