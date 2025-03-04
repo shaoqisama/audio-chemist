@@ -5,7 +5,7 @@ import { Controls } from '@/components/Controls';
 import { ParameterControls } from '@/components/ParameterControls';
 import { Sample } from '@/types/audio';
 import { Button } from '@/components/ui/button';
-import { Upload, PanelRight, PanelLeft, Library } from 'lucide-react';
+import { Upload, PanelRight, PanelLeft, Library, Menu, X } from 'lucide-react';
 import { 
   detectTransients, 
   analyzeSpectrum, 
@@ -24,19 +24,18 @@ const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showRightPanel, setShowRightPanel] = useState(true);
   
-  // Analysis parameters
   const [sensitivity, setSensitivity] = useState(50);
   const [attack, setAttack] = useState(10);
   const [release, setRelease] = useState(100);
   const [threshold, setThreshold] = useState(0.1);
   const [minLength, setMinLength] = useState(100);
   
-  // Audio markers
   const [markers, setMarkers] = useState<{id: string; position: number; color: string; label?: string}[]>([]);
   
-  // Sample management state
   const [sampleLibrary, setSampleLibrary] = useState<Sample[]>([]);
   const [activeLibrary, setActiveLibrary] = useState<'current' | 'saved'>('current');
+  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const audioContextRef = useRef<AudioContext>();
   const audioBufferRef = useRef<AudioBuffer | null>(null);
@@ -44,55 +43,46 @@ const Index = () => {
   const startTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
 
-  // Load sample library from localStorage on component mount
   useEffect(() => {
     const savedSamplesJson = localStorage.getItem('sampleLibrary');
     if (savedSamplesJson) {
       try {
-        // We can't fully serialize AudioBuffer, so we'll need to handle this specially
         const savedSamples = JSON.parse(savedSamplesJson);
         setSampleLibrary(savedSamples);
       } catch (error) {
         console.error('Error loading saved samples:', error);
       }
     }
-  }, []);
-  
-  // Save sample library to localStorage when it changes
-  useEffect(() => {
-    if (sampleLibrary.length > 0) {
-      try {
-        // We can't fully serialize AudioBuffer, so we'll need to save what we can
-        const serializableSamples = sampleLibrary.map(({ buffer, ...rest }) => ({
-          ...rest,
-          // Mark samples that don't have buffer anymore
-          hasBuffer: false
-        }));
-        localStorage.setItem('sampleLibrary', JSON.stringify(serializableSamples));
-      } catch (error) {
-        console.error('Error saving samples:', error);
+    
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setShowRightPanel(false);
+      } else {
+        setShowRightPanel(true);
       }
-    }
-  }, [sampleLibrary]);
+    };
+    
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const analyzeAudio = async (audioBuffer: AudioBuffer) => {
     try {
       setIsAnalyzing(true);
       
-      // Threshold based on sensitivity
       const calculatedThreshold = (100 - sensitivity) / 1000;
       
-      // Detect transients and onsets using user parameters
       const transients = detectTransients(audioBuffer, calculatedThreshold);
       const onsets = detectOnsets(audioBuffer, calculatedThreshold);
       
-      // Combine both detection methods and sort chronologically
       const allEvents = [...transients, ...onsets].sort((a, b) => a - b);
       
-      // Remove duplicates (events that are very close to each other)
       const uniqueEvents: number[] = [];
       let lastEvent = -1;
-      const minTimeBetweenEvents = minLength / 1000; // Convert ms to seconds
+      const minTimeBetweenEvents = minLength / 1000;
       
       allEvents.forEach(event => {
         if (lastEvent === -1 || event - lastEvent >= minTimeBetweenEvents) {
@@ -101,7 +91,6 @@ const Index = () => {
         }
       });
       
-      // Create markers at detection points
       const newMarkers = uniqueEvents.map((position, i) => ({
         id: `marker-${i}`,
         position,
@@ -111,26 +100,20 @@ const Index = () => {
       
       setMarkers(newMarkers);
       
-      // Analyze spectrum for overall characteristics
       const spectrum = await analyzeSpectrum(audioBuffer);
       
-      // Create samples based on analysis
       const newSamples: Sample[] = [];
       
-      // Process each detected event
       for (let i = 0; i < uniqueEvents.length; i++) {
         const startTime = uniqueEvents[i];
         const duration = i < uniqueEvents.length - 1 
           ? uniqueEvents[i + 1] - startTime 
           : 0.5;
         
-        // Skip samples that are too short
         if (duration * 1000 < minLength / 2) continue;
         
-        // Use the instrument identification function
         const instrumentType = await identifyInstrument(audioBuffer, startTime, duration);
         
-        // Map instrument type to sample type
         let sampleType: Sample['type'] = 'other';
         switch (instrumentType) {
           case 'kick':
@@ -191,12 +174,10 @@ const Index = () => {
       const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
       audioBufferRef.current = audioBuffer;
       
-      // Get audio data for visualization
       const channelData = audioBuffer.getChannelData(0);
       setAudioData(channelData);
       setDuration(audioBuffer.duration);
 
-      // Analyze the audio
       await analyzeAudio(audioBuffer);
     } catch (error) {
       console.error('Error loading audio:', error);
@@ -214,14 +195,12 @@ const Index = () => {
     if (!audioBufferRef.current || !audioContextRef.current) return;
     
     if (isPlaying) {
-      // Stop playback
       if (sourceNodeRef.current) {
         sourceNodeRef.current.stop();
         sourceNodeRef.current = null;
       }
       cancelAnimationFrame(animationFrameRef.current || 0);
     } else {
-      // Start playback
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBufferRef.current;
       source.connect(audioContextRef.current.destination);
@@ -232,7 +211,6 @@ const Index = () => {
       source.start(0, currentTime);
       source.onended = () => setIsPlaying(false);
       
-      // Update current time during playback
       const updatePlaybackTime = () => {
         if (audioContextRef.current && startTimeRef.current) {
           const newTime = audioContextRef.current.currentTime - startTimeRef.current;
@@ -263,7 +241,6 @@ const Index = () => {
   }, [isPlaying, handlePlayPause]);
 
   const handleSkipForward = useCallback(() => {
-    // Skip to end
     setCurrentTime(duration);
     if (isPlaying) {
       if (sourceNodeRef.current) {
@@ -301,24 +278,21 @@ const Index = () => {
   const handleSampleMerge = useCallback((samplesToMerge: Sample[]) => {
     if (samplesToMerge.length < 2) return;
     
-    // Sort by start time
     const sortedSamples = [...samplesToMerge].sort((a, b) => a.start - b.start);
     
     const firstSample = sortedSamples[0];
     const lastSample = sortedSamples[sortedSamples.length - 1];
     
-    // Create a new merged sample
     const mergedSample: Sample = {
       id: `merged-${Date.now()}`,
       name: `Merged Sample (${sortedSamples.length})`,
-      type: 'other', // Can be refined based on content analysis
+      type: 'other',
       start: firstSample.start,
       duration: (lastSample.start + lastSample.duration) - firstSample.start,
       buffer: firstSample.buffer,
       tags: []
     };
     
-    // Remove merged samples and add the new one
     setSamples(prev => [
       ...prev.filter(sample => !samplesToMerge.some(s => s.id === sample.id)),
       mergedSample
@@ -340,10 +314,8 @@ const Index = () => {
     );
   }, []);
 
-  // Handle adding samples to library
   const handleAddToLibrary = useCallback((samplesToAdd: Sample[]) => {
     setSampleLibrary(prev => {
-      // Add only samples that don't already exist in the library (by ID)
       const newSamples = samplesToAdd.filter(
         sample => !prev.some(existing => existing.id === sample.id)
       );
@@ -365,7 +337,6 @@ const Index = () => {
     });
   }, []);
 
-  // Handle updating sample data (tags, favorites, etc.)
   const handleSampleUpdate = useCallback((updatedSample: Sample) => {
     if (activeLibrary === 'current') {
       setSamples(prev => 
@@ -382,7 +353,6 @@ const Index = () => {
     }
   }, [activeLibrary]);
 
-  // Handle removing from library
   const handleRemoveFromLibrary = useCallback((sampleIds: string[]) => {
     setSampleLibrary(prev => prev.filter(sample => !sampleIds.includes(sample.id)));
     
@@ -392,7 +362,6 @@ const Index = () => {
     });
   }, []);
 
-  // Get the current samples to display based on active library
   const getDisplayedSamples = () => {
     return activeLibrary === 'current' ? samples : sampleLibrary;
   };
@@ -414,7 +383,6 @@ const Index = () => {
   }, [markers.length]);
 
   const handleSplitAt = useCallback((position: number) => {
-    // Find which sample to split
     const sampleToSplit = samples.find(
       sample => position >= sample.start && position <= sample.start + sample.duration
     );
@@ -430,7 +398,6 @@ const Index = () => {
     
     const splitPoint = position;
     
-    // Create two new samples
     const firstHalf: Sample = {
       id: `${sampleToSplit.id}-1`,
       name: `${sampleToSplit.name} (Part 1)`,
@@ -451,14 +418,12 @@ const Index = () => {
       tags: [...(sampleToSplit.tags || [])]
     };
     
-    // Replace the split sample with two new samples
     setSamples(prev => [
       ...prev.filter(s => s.id !== sampleToSplit.id),
       firstHalf,
       secondHalf
     ]);
     
-    // Add a marker at the split point
     handleAddMarker(position);
     
     toast({
@@ -470,16 +435,11 @@ const Index = () => {
   const handleAutoSettings = useCallback(() => {
     if (!audioBufferRef.current) return;
     
-    // Analyze audio characteristics to determine optimal settings
-    // This is simplified - a real implementation would analyze spectrum and transients
-    
     const avgAmplitude = calculateAverageAmplitude(audioBufferRef.current);
     
-    // Adjust sensitivity based on amplitude
     const newSensitivity = Math.round(60 - avgAmplitude * 100);
     setSensitivity(Math.max(10, Math.min(90, newSensitivity)));
     
-    // Set other parameters
     setAttack(Math.round(10 + avgAmplitude * 20));
     setRelease(Math.round(100 + avgAmplitude * 200));
     setThreshold(0.1 + avgAmplitude * 0.2);
@@ -495,16 +455,14 @@ const Index = () => {
     const channelData = audioBuffer.getChannelData(0);
     let sum = 0;
     
-    for (let i = 0; i < channelData.length; i += 1000) { // Sample every 1000th point for efficiency
+    for (let i = 0; i < channelData.length; i += 1000) {
       sum += Math.abs(channelData[i]);
     }
     
     return sum / (channelData.length / 1000);
   };
 
-  // Update the useEffect to handle audio buffer removal
   useEffect(() => {
-    // Clean up on unmount
     return () => {
       if (sourceNodeRef.current) {
         sourceNodeRef.current.stop();
@@ -512,14 +470,11 @@ const Index = () => {
       cancelAnimationFrame(animationFrameRef.current || 0);
     };
   }, []);
-  
-  // Special handling for sample library without buffers
+
   useEffect(() => {
     if (activeLibrary === 'saved' && audioBufferRef.current) {
-      // If we have a current audio buffer, try to re-associate it with library samples
       setSampleLibrary(prev => 
         prev.map(sample => {
-          // If sample doesn't have buffer and types match, assign the current buffer
           if (!sample.buffer && audioBufferRef.current) {
             return { ...sample, buffer: audioBufferRef.current };
           }
@@ -530,10 +485,17 @@ const Index = () => {
   }, [activeLibrary, audioBufferRef.current]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background p-6 animate-fade-in">
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Audio Alchemist</h1>
-        <div className="flex items-center space-x-3">
+    <div className="min-h-screen flex flex-col bg-background p-2 sm:p-4 md:p-6 animate-fade-in overflow-hidden">
+      <header className="flex items-center justify-between mb-4 md:mb-6">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-semibold tracking-tight">Audio Alchemist</h1>
+        
+        <div className="lg:hidden">
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
+        
+        <div className="hidden lg:flex items-center space-x-3">
           <Button 
             variant={activeLibrary === 'saved' ? 'default' : 'outline'} 
             onClick={() => setActiveLibrary(activeLibrary === 'current' ? 'saved' : 'current')}
@@ -548,19 +510,68 @@ const Index = () => {
           <Button variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
             <Upload className="w-4 h-4 mr-2" />
             Upload Audio
-            <input
-              id="file-upload"
-              type="file"
-              accept="audio/*"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
           </Button>
         </div>
+        
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in flex flex-col items-center justify-center">
+            <div className="w-full max-w-xs space-y-4 p-6">
+              <Button 
+                className="w-full justify-start" 
+                variant={activeLibrary === 'saved' ? 'default' : 'outline'}
+                onClick={() => {
+                  setActiveLibrary(activeLibrary === 'current' ? 'saved' : 'current');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <Library className="w-4 h-4 mr-2" />
+                {activeLibrary === 'current' ? 'View Library' : 'Current Session'}
+              </Button>
+              <Button 
+                className="w-full justify-start" 
+                variant="outline" 
+                onClick={() => {
+                  setShowRightPanel(!showRightPanel);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                {showRightPanel ? <PanelRight className="w-4 h-4 mr-2" /> : <PanelLeft className="w-4 h-4 mr-2" />}
+                {showRightPanel ? "Hide" : "Show"} Panel
+              </Button>
+              <Button 
+                className="w-full justify-start" 
+                variant="outline" 
+                onClick={() => {
+                  document.getElementById('file-upload')?.click();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Audio
+              </Button>
+              <Button 
+                className="w-full" 
+                variant="destructive" 
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Close Menu
+              </Button>
+            </div>
+          </div>
+        )}
       </header>
 
-      <div className={`grid grid-cols-1 ${showRightPanel ? 'lg:grid-cols-[1fr_350px]' : ''} gap-6 flex-1`}>
-        <div className="flex flex-col space-y-6">
+      <input
+        id="file-upload"
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
+
+      <div className={`grid grid-cols-1 ${showRightPanel ? 'lg:grid-cols-[1fr_350px]' : ''} gap-2 md:gap-4 lg:gap-6 flex-1 h-[calc(100vh-80px)] overflow-hidden`}>
+        <div className="flex flex-col space-y-3 md:space-y-4 lg:space-y-6 overflow-y-auto scrollbar-thin">
           <WaveformDisplay 
             audioData={audioData}
             markers={markers}
@@ -568,7 +579,7 @@ const Index = () => {
             onSplitAt={handleSplitAt}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 pb-4">
             <Controls
               isPlaying={isPlaying}
               onPlayPause={handlePlayPause}
@@ -595,9 +606,9 @@ const Index = () => {
         </div>
         
         {showRightPanel && (
-          <div className="bg-card rounded-lg border">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-medium">
+          <div className="bg-card rounded-lg border h-full overflow-hidden flex flex-col">
+            <div className="p-3 md:p-4 border-b flex items-center justify-between flex-shrink-0">
+              <h2 className="text-base md:text-lg font-medium">
                 {activeLibrary === 'current' ? 'Detected Samples' : 'Sample Library'}
               </h2>
               {activeLibrary === 'current' && samples.length > 0 && (
@@ -608,17 +619,19 @@ const Index = () => {
                   className="flex items-center gap-1"
                 >
                   <Library className="h-3.5 w-3.5" />
-                  <span>Save All</span>
+                  <span className="hidden sm:inline">Save All</span>
                 </Button>
               )}
             </div>
-            <SampleList
-              samples={getDisplayedSamples()}
-              onSampleClick={handleSampleClick}
-              onSampleMerge={activeLibrary === 'current' ? handleSampleMerge : undefined}
-              onSampleRename={handleSampleRename}
-              onSampleUpdate={handleSampleUpdate}
-            />
+            <div className="flex-grow overflow-hidden">
+              <SampleList
+                samples={getDisplayedSamples()}
+                onSampleClick={handleSampleClick}
+                onSampleMerge={activeLibrary === 'current' ? handleSampleMerge : undefined}
+                onSampleRename={handleSampleRename}
+                onSampleUpdate={handleSampleUpdate}
+              />
+            </div>
           </div>
         )}
       </div>

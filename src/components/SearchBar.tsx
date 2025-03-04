@@ -92,13 +92,13 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     (filters.favorites ? 1 : 0);
 
   return (
-    <div className="flex space-x-2">
+    <div className="flex space-x-2 w-full">
       <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Search samples..."
-          className="pl-9 pr-9"
+          className="pl-8 pr-8 h-9 text-sm"
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -107,7 +107,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-1 top-1 h-8 w-8"
+            className="absolute right-0 top-0 h-9 w-9"
             onClick={handleClearSearch}
           >
             <X className="h-4 w-4" />
@@ -120,7 +120,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
           <Button 
             variant="outline" 
             size="icon"
-            className={activeFilterCount > 0 ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+            className={`h-9 w-9 ${activeFilterCount > 0 ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
           >
             <Filter className="h-4 w-4" />
             {activeFilterCount > 0 && (
@@ -182,7 +182,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      <Button onClick={handleSearch}>
+      <Button onClick={handleSearch} className="h-9 hidden xs:flex">
         <Search className="h-4 w-4 mr-2" />
         Search
       </Button>

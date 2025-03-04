@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { X, Plus, Tag } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 interface TagInputProps {
   tags: string[];
@@ -49,10 +49,10 @@ export const TagInput = ({ tags, onChange, suggestions = [] }: TagInputProps) =>
   );
 
   return (
-    <div className="flex flex-col space-y-2">
-      <div className="flex flex-wrap gap-1.5 bg-background border border-input px-3 py-1 rounded-md">
+    <div className="flex flex-col space-y-2 w-full">
+      <div className="flex flex-wrap gap-1.5 bg-background border border-input px-2 py-1 rounded-md min-h-[38px]">
         {tags.map(tag => (
-          <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+          <Badge key={tag} variant="secondary" className="flex items-center gap-1 text-xs md:text-sm my-0.5">
             {tag}
             <button
               type="button"
@@ -63,14 +63,14 @@ export const TagInput = ({ tags, onChange, suggestions = [] }: TagInputProps) =>
             </button>
           </Badge>
         ))}
-        <div className="flex-1 flex items-center">
+        <div className="flex-1 flex items-center min-w-[100px]">
           <Input
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => setShowSuggestions(!!inputValue)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-            className="border-none p-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground"
+            className="border-none p-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground text-sm w-full"
             placeholder={tags.length === 0 ? "Add tags..." : ""}
           />
           {inputValue && (
@@ -78,7 +78,7 @@ export const TagInput = ({ tags, onChange, suggestions = [] }: TagInputProps) =>
               type="button" 
               variant="ghost" 
               size="icon" 
-              className="h-6 w-6" 
+              className="h-6 w-6 flex-shrink-0" 
               onClick={() => handleAddTag(inputValue)}
             >
               <Plus className="h-3 w-3" />
@@ -88,12 +88,12 @@ export const TagInput = ({ tags, onChange, suggestions = [] }: TagInputProps) =>
       </div>
       
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute z-10 mt-14 bg-background border border-input rounded-md shadow-lg max-h-40 overflow-y-auto">
+        <div className="absolute z-10 mt-12 bg-background border border-input rounded-md shadow-lg max-h-40 overflow-y-auto w-fit max-w-[calc(100%-2rem)]">
           <ul className="py-1">
             {filteredSuggestions.map(suggestion => (
               <li 
                 key={suggestion}
-                className="px-3 py-1.5 hover:bg-secondary cursor-pointer text-sm"
+                className="px-3 py-1.5 hover:bg-secondary cursor-pointer text-sm truncate"
                 onClick={() => {
                   handleAddTag(suggestion);
                   setShowSuggestions(false);

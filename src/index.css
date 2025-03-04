@@ -38,8 +38,30 @@
   }
 }
 
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-secondary/20;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-secondary rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-secondary/80;
+  }
+}
+
 .waveform-container {
-  @apply relative w-full h-[200px] bg-waveform-background border border-border rounded-lg overflow-hidden;
+  @apply relative w-full h-[200px] md:h-[250px] bg-waveform-background border border-border rounded-lg overflow-hidden;
 }
 
 .waveform-grid {
@@ -97,3 +119,14 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-secondary/80;
 }
+
+@media (max-width: 640px) {
+  .sample-card-content {
+    @apply flex-col items-start;
+  }
+  
+  .sample-actions {
+    @apply flex-row mt-2 w-full justify-end;
+  }
+}
+
