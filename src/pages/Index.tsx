@@ -486,6 +486,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background p-2 sm:p-4 md:p-6 animate-fade-in overflow-hidden">
+      <div className="fixed top-4 right-4 z-40">
+        <a href="/landing" className="text-xs bg-card border border-border px-2 py-1 rounded shadow hover:scale-105 transition-transform animate-fade-in">
+          Try the Landing Page →
+        </a>
+      </div>
       <header className="flex items-center justify-between mb-4 md:mb-6">
         <h1 className="text-lg sm:text-xl md:text-2xl font-semibold tracking-tight">Audio Alchemist</h1>
         
