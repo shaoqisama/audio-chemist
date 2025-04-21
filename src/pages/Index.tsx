@@ -4,8 +4,8 @@ import { SampleList } from '@/components/SampleList';
 import { Controls } from '@/components/Controls';
 import { ParameterControls } from '@/components/ParameterControls';
 import { Sample } from '@/types/audio';
-import { Button } from '@/components/ui/button';
-import { Upload, PanelRight, PanelLeft, Library, Menu, X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Upload, PanelRight, PanelLeft, Library, Menu, X, FlaskConical } from 'lucide-react';
 import { 
   detectTransients, 
   analyzeSpectrum, 
@@ -485,88 +485,144 @@ const Index = () => {
   }, [activeLibrary, audioBufferRef.current]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background p-2 sm:p-4 md:p-6 animate-fade-in overflow-hidden">
-      <div className="fixed top-4 right-4 z-40">
-        <a href="/landing" className="text-xs bg-card border border-border px-2 py-1 rounded shadow hover:scale-105 transition-transform animate-fade-in">
-          Try the Landing Page →
+    <div className="relative min-h-screen flex flex-col bg-gradient-to-tr from-[#202f1e] via-[#18381d] to-[#222] p-2 sm:p-4 md:p-6 animate-fade-in overflow-hidden justify-between items-center">
+      {/* Grunge/Texture overlays as in Landing */}
+      <div className="pointer-events-none absolute inset-0 z-0 opacity-50 mix-blend-overlay bg-[url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80')] bg-cover bg-center"></div>
+      <div className="pointer-events-none absolute inset-0 z-10 opacity-30 bg-gradient-to-br from-[#aeea62]/25 via-[#2e4e1c]/15 to-transparent animate-fade-in"></div>
+      <div className="pointer-events-none fixed inset-0 z-10 opacity-25 blur-[2px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#cbff6c]/40 via-transparent to-transparent"></div>
+      
+      {/* Header */}
+      <header className="relative z-20 w-full px-4 pt-7 flex items-center justify-between max-w-6xl mx-auto">
+        <span className="flex items-center space-x-1 text-2xl font-bold tracking-tighter font-playfair text-[#caff70] drop-shadow-glow">
+          <span className="bg-[#234c20] px-2 rounded-md text-[#e1fe82] border-2 border-[#afe62c] mr-2 shadow-lg">Au</span>
+          <span>AUDIO</span>
+          <span className="ml-2 bg-[#234c20] px-2 rounded-md text-[#e1fe82] border-2 border-[#afe62c] shadow-lg">Al</span>
+          <span>CHEMIST</span>
+        </span>
+        <a href="/landing" className="ml-2">
+          <Button variant="outline" size="sm" className="!bg-[#232] !text-[#caff70] border-[#b4e762] hover:!bg-[#2c521d] hover:border-[#ffe600] shadow-md">
+            Launch Pad
+          </Button>
         </a>
-      </div>
-      <header className="flex items-center justify-between mb-4 md:mb-6">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-semibold tracking-tight">Audio Alchemist</h1>
-        
-        <div className="lg:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
-        </div>
-        
-        <div className="hidden lg:flex items-center space-x-3">
-          <Button 
-            variant={activeLibrary === 'saved' ? 'default' : 'outline'} 
-            onClick={() => setActiveLibrary(activeLibrary === 'current' ? 'saved' : 'current')}
-          >
-            <Library className="w-4 h-4 mr-2" />
-            {activeLibrary === 'current' ? 'View Library' : 'Current Session'}
-          </Button>
-          <Button variant="outline" onClick={() => setShowRightPanel(!showRightPanel)}>
-            {showRightPanel ? <PanelRight className="w-4 h-4 mr-2" /> : <PanelLeft className="w-4 h-4 mr-2" />}
-            {showRightPanel ? "Hide" : "Show"} Panel
-          </Button>
-          <Button variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Audio
-          </Button>
-        </div>
-        
-        {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in flex flex-col items-center justify-center">
-            <div className="w-full max-w-xs space-y-4 p-6">
-              <Button 
-                className="w-full justify-start" 
-                variant={activeLibrary === 'saved' ? 'default' : 'outline'}
-                onClick={() => {
-                  setActiveLibrary(activeLibrary === 'current' ? 'saved' : 'current');
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Library className="w-4 h-4 mr-2" />
-                {activeLibrary === 'current' ? 'View Library' : 'Current Session'}
-              </Button>
-              <Button 
-                className="w-full justify-start" 
-                variant="outline" 
-                onClick={() => {
-                  setShowRightPanel(!showRightPanel);
-                  setMobileMenuOpen(false);
-                }}
-              >
-                {showRightPanel ? <PanelRight className="w-4 h-4 mr-2" /> : <PanelLeft className="w-4 h-4 mr-2" />}
-                {showRightPanel ? "Hide" : "Show"} Panel
-              </Button>
-              <Button 
-                className="w-full justify-start" 
-                variant="outline" 
-                onClick={() => {
-                  document.getElementById('file-upload')?.click();
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Audio
-              </Button>
-              <Button 
-                className="w-full" 
-                variant="destructive" 
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <X className="w-4 h-4 mr-2" />
-                Close Menu
-              </Button>
-            </div>
-          </div>
-        )}
       </header>
 
+      {/* Main App Content Wrapped in a Card-style Box */}
+      <main className="relative z-20 flex flex-col flex-1 w-full items-center justify-center px-2 pt-4 md:pt-10 max-w-6xl mx-auto w-[98vw]">
+        {/* Hero-like section mimicking landing page */}
+        <div className="w-full text-center mb-4 md:mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-[#cbff6c] via-[#ffe600] to-[#6ee7b7] text-transparent bg-clip-text animate-fade-in mb-2 drop-shadow-glow uppercase">
+            <span className="inline-block transform hover:scale-110 transition-transform">
+              Audio Alchemist
+              <span className="inline ml-3 bg-[#1e3d23] px-3 rounded-md text-[#ffe600] border-2 border-[#d3ff6d] shadow-2xl">LAB</span>
+            </span>
+          </h1>
+          <p className="mt-4 text-base md:text-xl text-[#cedfc2] font-light drop-shadow-md">
+            <span className="text-[#e1fe82] font-bold">Detect</span>, <span className="text-[#ffe600] font-bold">split</span>, and <span className="text-[#ffb129] font-bold">remix</span> your samples like Heisenberg himself.<br/>
+            Chemistry-level precision. No half measures.
+          </p>
+        </div>
+        <div className="fixed top-4 right-4 z-40">
+          <a href="/landing" className="text-xs bg-card border border-border px-2 py-1 rounded shadow hover:scale-105 transition-transform animate-fade-in">
+            Try the Landing Page →
+          </a>
+        </div>
+        {/* Responsive, BB-styled panel */}
+        <div className={`grid grid-cols-1 ${showRightPanel ? 'lg:grid-cols-[1fr_350px]' : ''} gap-2 md:gap-4 lg:gap-6 flex-1 w-full h-[calc(100vh-210px)] overflow-hidden`}>
+          <div className="flex flex-col space-y-3 md:space-y-4 lg:space-y-6 overflow-y-auto scrollbar-thin bg-[#212d1f]/80 border border-[#b4e76240] rounded-2xl shadow-xl p-3 md:p-4 backdrop-blur-sm">
+            <WaveformDisplay 
+              audioData={audioData}
+              markers={markers}
+              onMarkerAdd={handleAddMarker}
+              onSplitAt={handleSplitAt}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 pb-4">
+              <Controls
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                onSkipBack={handleSkipBack}
+                onSkipForward={handleSkipForward}
+                sensitivity={sensitivity}
+                onSensitivityChange={setSensitivity}
+              />
+              <ParameterControls
+                sensitivity={sensitivity}
+                attack={attack}
+                release={release}
+                threshold={threshold}
+                minLength={minLength}
+                onSensitivityChange={setSensitivity}
+                onAttackChange={setAttack}
+                onReleaseChange={setRelease}
+                onThresholdChange={setThreshold}
+                onMinLengthChange={setMinLength}
+                onAutomaticSettings={handleAutoSettings}
+              />
+            </div>
+          </div>
+          {showRightPanel && (
+            <div className="bg-[#27381f]/80 border border-[#80bf1f]/30 rounded-2xl h-full overflow-hidden flex flex-col shadow-2xl backdrop-blur-[1.5px] animate-scale-in">
+              <div className="p-3 md:p-4 border-b flex items-center justify-between flex-shrink-0">
+                <h2 className="text-base md:text-lg font-medium text-[#caff70] flex items-center gap-2">
+                  <FlaskConical className="w-5 h-5 text-[#c1f065] drop-shadow-glow" />
+                  {activeLibrary === 'current' ? 'Detected Samples' : 'Sample Library'}
+                </h2>
+                {activeLibrary === 'current' && samples.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleAddToLibrary(samples)}
+                    className="flex items-center gap-1 border-[#eaff93] text-[#caff70] hover:bg-[#234c20]/60 hover:border-[#ffe600]"
+                  >
+                    <Library className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Save All</span>
+                  </Button>
+                )}
+              </div>
+              <div className="flex-grow overflow-hidden">
+                <SampleList
+                  samples={getDisplayedSamples()}
+                  onSampleClick={handleSampleClick}
+                  onSampleMerge={activeLibrary === 'current' ? handleSampleMerge : undefined}
+                  onSampleRename={handleSampleRename}
+                  onSampleUpdate={handleSampleUpdate}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+      {/* Footer style matches landing */}
+      <footer className="relative z-20 w-full pb-8 pt-8 flex items-center justify-center text-xs text-[#bde597] tracking-wide">
+        <span>
+          &copy; {new Date().getFullYear()} Audio Chemist. 
+          <span className="ml-1 text-[#ffe600] font-black">Say my name.</span>
+        </span>
+      </footer>
+      <style>
+        {`
+          .drop-shadow-glow {
+            filter: drop-shadow(0 0 7px #aef752aa);
+          }
+          @media (max-width: 600px) {
+            .font-playfair, .text-3xl, .text-4xl, .text-5xl {
+              font-size: 1.7rem !important;
+              line-height: 2.3rem !important;
+            }
+            .md\\:pt-10 {
+              padding-top: 1rem !important;
+            }
+            .max-w-2xl, .max-w-6xl {
+              max-width: 98vw !important;
+              padding: 0 0.2rem !important;
+            }
+            section > div {
+              margin-top: 2rem !important;
+              margin-bottom: 2rem !important;
+            }
+          }
+        `}
+      </style>
+      {/* Hidden input and floating menus left unstyled for clarity */}
       <input
         id="file-upload"
         type="file"
@@ -574,72 +630,54 @@ const Index = () => {
         className="hidden"
         onChange={handleFileUpload}
       />
-
-      <div className={`grid grid-cols-1 ${showRightPanel ? 'lg:grid-cols-[1fr_350px]' : ''} gap-2 md:gap-4 lg:gap-6 flex-1 h-[calc(100vh-80px)] overflow-hidden`}>
-        <div className="flex flex-col space-y-3 md:space-y-4 lg:space-y-6 overflow-y-auto scrollbar-thin">
-          <WaveformDisplay 
-            audioData={audioData}
-            markers={markers}
-            onMarkerAdd={handleAddMarker}
-            onSplitAt={handleSplitAt}
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 pb-4">
-            <Controls
-              isPlaying={isPlaying}
-              onPlayPause={handlePlayPause}
-              onSkipBack={handleSkipBack}
-              onSkipForward={handleSkipForward}
-              sensitivity={sensitivity}
-              onSensitivityChange={setSensitivity}
-            />
-            
-            <ParameterControls
-              sensitivity={sensitivity}
-              attack={attack}
-              release={release}
-              threshold={threshold}
-              minLength={minLength}
-              onSensitivityChange={setSensitivity}
-              onAttackChange={setAttack}
-              onReleaseChange={setRelease}
-              onThresholdChange={setThreshold}
-              onMinLengthChange={setMinLength}
-              onAutomaticSettings={handleAutoSettings}
-            />
+      
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in flex flex-col items-center justify-center">
+          <div className="w-full max-w-xs space-y-4 p-6">
+            <Button 
+              className="w-full justify-start" 
+              variant={activeLibrary === 'saved' ? 'default' : 'outline'}
+              onClick={() => {
+                setActiveLibrary(activeLibrary === 'current' ? 'saved' : 'current');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Library className="w-4 h-4 mr-2" />
+              {activeLibrary === 'current' ? 'View Library' : 'Current Session'}
+            </Button>
+            <Button 
+              className="w-full justify-start" 
+              variant="outline" 
+              onClick={() => {
+                setShowRightPanel(!showRightPanel);
+                setMobileMenuOpen(false);
+              }}
+            >
+              {showRightPanel ? <PanelRight className="w-4 h-4 mr-2" /> : <PanelLeft className="w-4 h-4 mr-2" />}
+              {showRightPanel ? "Hide" : "Show"} Panel
+            </Button>
+            <Button 
+              className="w-full justify-start" 
+              variant="outline" 
+              onClick={() => {
+                document.getElementById('file-upload')?.click();
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Audio
+            </Button>
+            <Button 
+              className="w-full" 
+              variant="destructive" 
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Close Menu
+            </Button>
           </div>
         </div>
-        
-        {showRightPanel && (
-          <div className="bg-card rounded-lg border h-full overflow-hidden flex flex-col">
-            <div className="p-3 md:p-4 border-b flex items-center justify-between flex-shrink-0">
-              <h2 className="text-base md:text-lg font-medium">
-                {activeLibrary === 'current' ? 'Detected Samples' : 'Sample Library'}
-              </h2>
-              {activeLibrary === 'current' && samples.length > 0 && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleAddToLibrary(samples)}
-                  className="flex items-center gap-1"
-                >
-                  <Library className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Save All</span>
-                </Button>
-              )}
-            </div>
-            <div className="flex-grow overflow-hidden">
-              <SampleList
-                samples={getDisplayedSamples()}
-                onSampleClick={handleSampleClick}
-                onSampleMerge={activeLibrary === 'current' ? handleSampleMerge : undefined}
-                onSampleRename={handleSampleRename}
-                onSampleUpdate={handleSampleUpdate}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };
