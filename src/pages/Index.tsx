@@ -527,15 +527,17 @@ const Index = () => {
           </a>
         </div>
         {/* Responsive, BB-styled panel */}
-        <div className={`grid grid-cols-1 ${showRightPanel ? 'lg:grid-cols-[1fr_350px]' : ''} gap-2 md:gap-4 lg:gap-6 flex-1 w-full h-[calc(100vh-210px)] overflow-hidden`}>
-          <div className="flex flex-col space-y-3 md:space-y-4 lg:space-y-6 overflow-y-auto scrollbar-thin bg-[#212d1f]/80 border border-[#b4e76240] rounded-2xl shadow-xl p-3 md:p-4 backdrop-blur-sm">
+        <div className={`grid grid-cols-1 ${
+          showRightPanel ? 'lg:grid-cols-[1fr_385px]' : ''
+        } gap-2 md:gap-4 lg:gap-7 flex-1 w-full h-[calc(100vh-210px)] overflow-hidden`}>
+          <div className="flex flex-col space-y-3 md:space-y-4 lg:space-y-6 overflow-y-auto scrollbar-thin bg-gradient-to-br from-[#273e22aa] via-[#33451eaa] to-[#465b2590] border border-[#d9fa4a30] rounded-2xl shadow-2xl p-3 md:p-4 backdrop-blur-md">
             <WaveformDisplay 
               audioData={audioData}
               markers={markers}
               onMarkerAdd={handleAddMarker}
               onSplitAt={handleSplitAt}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 pb-5">
               <Controls
                 isPlaying={isPlaying}
                 onPlayPause={handlePlayPause}
@@ -560,25 +562,23 @@ const Index = () => {
             </div>
           </div>
           {showRightPanel && (
-            <div className="bg-[#27381f]/80 border border-[#80bf1f]/30 rounded-2xl h-full overflow-hidden flex flex-col shadow-2xl backdrop-blur-[1.5px] animate-scale-in">
-              <div className="p-3 md:p-4 border-b flex items-center justify-between flex-shrink-0">
-                <h2 className="text-base md:text-lg font-medium text-[#caff70] flex items-center gap-2">
-                  <FlaskConical className="w-5 h-5 text-[#c1f065] drop-shadow-glow" />
-                  {activeLibrary === 'current' ? 'Detected Samples' : 'Sample Library'}
+            <div className="bg-gradient-to-br from-[#212d1fce] via-[#32471ac0] to-[#212c1ed1] border border-[#b8e87c60] rounded-2xl h-full overflow-hidden flex flex-col shadow-2xl backdrop-blur-[1.5px] animate-scale-in ring-2 ring-[#d6fa3666]">
+              <div className="p-3 md:p-4 border-b flex items-center justify-between flex-shrink-0 bg-gradient-to-l from-[#e1fe82]/20 via-transparent to-transparent">
+                <h2 className="text-base md:text-lg font-bold text-[#d7ffb4] flex items-center gap-2 drop-shadow-glow">
+                  <span className="inline-block bg-[#32471a]/90 rounded px-2 border border-[#eaff9340] text-[#eaff93] shadow-md mr-1">Detected</span>Samples
                 </h2>
                 {activeLibrary === 'current' && samples.length > 0 && (
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleAddToLibrary(samples)}
-                    className="flex items-center gap-1 border-[#eaff93] text-[#caff70] hover:bg-[#234c20]/60 hover:border-[#ffe600]"
+                    className="flex items-center gap-1 border-[#eaff93] text-[#caff70] bg-[#234c20]/60 hover:bg-[#29581f]/60 hover:border-[#ffe600]"
                   >
-                    <Library className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Save All</span>
+                    <span className="hidden sm:inline font-semibold text-[#fffecd]">Save All</span>
                   </Button>
                 )}
               </div>
-              <div className="flex-grow overflow-hidden">
+              <div className="flex-grow overflow-hidden p-2">
                 <SampleList
                   samples={getDisplayedSamples()}
                   onSampleClick={handleSampleClick}
