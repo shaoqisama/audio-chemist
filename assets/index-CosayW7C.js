@@ -331,4 +331,4 @@ Error generating stack: `+s.message+`
           .animate-spin-slow {
             animation: spin-slow 8s linear infinite;
           }
-        `})]}),sT=new d2,iT=()=>p.jsx(p2,{client:sT,children:p.jsxs(BE,{children:[p.jsx($S,{}),p.jsx(mC,{}),p.jsx(ck,{basename:"/audio-sorcery",children:p.jsxs(nk,{children:[p.jsx($i,{path:"/landing",element:p.jsx(oT,{})}),p.jsx($i,{path:"/",element:p.jsx(tT,{})}),p.jsx($i,{path:"*",element:p.jsx(nT,{})})]})})]})});Ig(document.getElementById("root")).render(p.jsx(iT,{}));
+        `})]}),sT=new d2,iT=()=>p.jsx(p2,{client:sT,children:p.jsxs(BE,{children:[p.jsx($S,{}),p.jsx(mC,{}),p.jsx(ck,{basename:"/audio-chemist",children:p.jsxs(nk,{children:[p.jsx($i,{path:"/landing",element:p.jsx(oT,{})}),p.jsx($i,{path:"/",element:p.jsx(tT,{})}),p.jsx($i,{path:"*",element:p.jsx(nT,{})})]})})]})});Ig(document.getElementById("root")).render(p.jsx(iT,{}));
