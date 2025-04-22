@@ -1,3 +1,47 @@
+# Audio Sorcery
+
+This is the Audio Sorcery project, a web application built with React and Vite.
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+## Deployment to GitHub Pages
+
+### Automatic Deployment
+This project is configured for automatic deployment to GitHub Pages using GitHub Actions. When you push to the `main` branch, the GitHub workflow will automatically build and deploy your site.
+
+### Manual Deployment
+You can also deploy manually using the gh-pages package:
+
+```bash
+# Build and deploy
+npm run deploy
+```
+
+### Setup for GitHub Pages
+1. In your GitHub repository, go to Settings > Pages
+2. For Source, select "GitHub Actions"
+3. Make sure your repository is public or you have GitHub Pro for private repository hosting
+
+## Project Configuration
+- The site is configured to be deployed at: `https://USERNAME.github.io/audio-sorcery/`
+- The router is configured with a basename of `/audio-sorcery`
+- The Vite configuration includes a base path of `/audio-sorcery/`
+
+## Customizing the Base Path
+If you want to use a different repository name, you'll need to update:
+1. The `base` path in `vite.config.ts`
+2. The `basename` prop in the `BrowserRouter` in `src/App.tsx` 
+3. The `pathSegmentsToKeep` variable in `public/404.html`
+4. Update the og-image path in `index.html`
+
 # Welcome to your Lovable project
 
 ## Project info
