@@ -14,21 +14,32 @@ npm run dev
 
 ## Deployment to GitHub Pages
 
-### Automatic Deployment
-This project is configured for automatic deployment to GitHub Pages using GitHub Actions. When you push to the `main` branch, the GitHub workflow will automatically build and deploy your site.
-
-### Manual Deployment
-You can also deploy manually using the gh-pages package:
+### Method 1: Manual Deployment (Recommended)
+You can deploy manually using the gh-pages package, which is often more reliable:
 
 ```bash
 # Build and deploy
 npm run deploy
 ```
 
+This will push your built files to the gh-pages branch, which GitHub will use to serve your site.
+
+### Method 2: Automatic Deployment via GitHub Actions
+This project is also configured for automatic deployment using GitHub Actions. When you push to the `main` branch, the GitHub workflow will attempt to build and deploy your site.
+
 ### Setup for GitHub Pages
 1. In your GitHub repository, go to Settings > Pages
-2. For Source, select "GitHub Actions"
+2. For Source, select "Deploy from a branch" and choose "gh-pages" branch with the root folder (/)
+   - Alternatively, you can select "GitHub Actions" if using the workflow method
 3. Make sure your repository is public or you have GitHub Pro for private repository hosting
+4. If using GitHub Actions and encountering errors, try the manual deployment method instead
+
+### Troubleshooting GitHub Pages Deployment
+If you encounter GitHub Actions deployment errors:
+1. Make sure GitHub Pages is enabled in your repository settings
+2. Try manual deployment with `npm run deploy` instead
+3. Check that your repository settings are correctly pointing to the gh-pages branch
+4. The .nojekyll file is included to prevent Jekyll processing which can cause issues with SPAs
 
 ## Project Configuration
 - The site is configured to be deployed at: `https://USERNAME.github.io/audio-sorcery/`
